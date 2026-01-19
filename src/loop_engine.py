@@ -254,7 +254,10 @@ class LoopEngine:
                     )
 
                 context.iteration = iteration
-                self.display.show_iteration(iteration, max_iter)
+                # Only show iteration count for non-interactive phases
+                current_phase = self.phase_manager.current_phase_name
+                if current_phase not in (PhaseName.PRD, PhaseName.TICKETS):
+                    self.display.show_iteration(iteration, max_iter)
 
                 # Log the input
                 if context.current_input:
