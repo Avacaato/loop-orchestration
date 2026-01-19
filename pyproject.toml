@@ -1,0 +1,37 @@
+[project]
+name = "loop-orchestration"
+version = "0.1.0"
+description = "Local LLM-powered autonomous development workflow tool using Ollama"
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.24.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.0.0",
+    "types-PyYAML>=6.0",
+    "pytest>=7.0.0",
+]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
