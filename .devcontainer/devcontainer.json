@@ -1,0 +1,8 @@
+{
+  "name": "Claude Build Environment",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "postCreateCommand": "npm install -g @anthropic-ai/claude-code && echo 'Claude Code installed. Run: claude auth login'",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {}
+  }
+}

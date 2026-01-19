@@ -1,0 +1,7 @@
+# Ralph Progress Log
+---
+
+## Codebase Patterns
+(Patterns will be added here as the project is built)
+
+---
