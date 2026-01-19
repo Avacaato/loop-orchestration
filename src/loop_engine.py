@@ -116,16 +116,22 @@ class LoopEngine:
     def _build_messages(
         self,
         context: LoopContext,
+        system_prompt: str = "",
     ) -> list[Message]:
         """Build message history for the LLM.
 
         Args:
             context: Current loop context
+            system_prompt: System prompt to prepend
 
         Returns:
             List of messages for the LLM
         """
         messages: list[Message] = []
+
+        # Add system prompt first
+        if system_prompt:
+            messages.append(Message(role="system", content=system_prompt))
 
         # Add conversation history from session
         for msg in self.session.conversation_history:
@@ -262,7 +268,7 @@ class LoopEngine:
                     )
 
                 # Build messages and call LLM
-                messages = self._build_messages(context)
+                messages = self._build_messages(context, system_prompt=system_prompt)
 
                 try:
                     response = self.client.chat(
