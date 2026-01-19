@@ -298,6 +298,8 @@ class LoopEngine:
                 # Check completion status
                 if completion_result.status == CompletionStatus.TASK_COMPLETE:
                     self._save_state()
+                    # Save output to file
+                    self._save_output(output, context.project_root)
                     return LoopResult(
                         status=LoopStatus.COMPLETED,
                         iterations=iteration,
@@ -363,6 +365,45 @@ class LoopEngine:
             self.display.show_status("State saved")
         except Exception as e:
             self.display.show_status(f"Failed to save state: {e}", is_error=True)
+
+    def _save_output(self, output: str, project_root: str) -> None:
+        """Save task output to file.
+
+        Args:
+            output: The output content
+            project_root: Project root directory
+        """
+        from pathlib import Path
+        import re
+
+        output_dir = Path(project_root) / "output"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Extract code blocks if present
+        code_blocks = re.findall(r'```(\w*)\n(.*?)```', output, re.DOTALL)
+
+        if code_blocks:
+            for i, (lang, code) in enumerate(code_blocks):
+                # Determine file extension
+                ext_map = {
+                    'python': '.py', 'py': '.py',
+                    'javascript': '.js', 'js': '.js',
+                    'typescript': '.ts', 'ts': '.ts',
+                    'bash': '.sh', 'sh': '.sh',
+                    'html': '.html', 'css': '.css',
+                    'json': '.json', 'yaml': '.yaml', 'yml': '.yaml',
+                }
+                ext = ext_map.get(lang.lower(), '.txt')
+                filename = f"code_{i+1}{ext}" if len(code_blocks) > 1 else f"output{ext}"
+
+                filepath = output_dir / filename
+                filepath.write_text(code.strip(), encoding='utf-8')
+                self.display.show_status(f"Saved: {filepath}")
+        else:
+            # Save raw output
+            filepath = output_dir / "output.txt"
+            filepath.write_text(output, encoding='utf-8')
+            self.display.show_status(f"Saved: {filepath}")
 
     def resume(
         self,
