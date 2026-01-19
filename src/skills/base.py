@@ -126,6 +126,29 @@ class BaseSkill(ABC):
         """
         ...
 
+    @abstractmethod
+    def reset(self) -> None:
+        """Reset the skill state."""
+        ...
+
+    @abstractmethod
+    def get_state(self) -> dict[str, Any]:
+        """Get current skill state for persistence.
+
+        Returns:
+            State dictionary
+        """
+        ...
+
+    @abstractmethod
+    def set_state(self, state: dict[str, Any]) -> None:
+        """Restore skill state.
+
+        Args:
+            state: State dictionary
+        """
+        ...
+
     def get_tools(self) -> list[SkillTool]:
         """Get available tools for this skill.
 
