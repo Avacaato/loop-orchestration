@@ -1,0 +1,321 @@
+{
+  "project": "Loop Orchestration",
+  "branchName": "ralph/loop-orchestration",
+  "description": "Local LLM-powered autonomous development workflow tool using Ollama - replicates Pickle Rick functionality without Gemini dependency",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Set up Ollama client module",
+      "description": "As a developer, I need a Python module that communicates with Ollama's REST API so the system can send prompts and receive completions.",
+      "acceptanceCriteria": [
+        "Create src/ollama_client.py with OllamaClient class",
+        "Implement generate(prompt, model, system_prompt) method",
+        "Implement chat(messages, model) method for multi-turn conversations",
+        "Handle connection errors gracefully with retry logic (3 retries, exponential backoff)",
+        "Support configurable base URL (default: http://localhost:11434)",
+        "Clear error message if Ollama not running: 'Cannot connect to Ollama at {url}. Is it running?'",
+        "Clear error message if model not found: 'Model {model} not found. Run: ollama pull {model}'",
+        "Handle LLM timeout (configurable, default 5 minutes for long generations)",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Create configuration system",
+      "description": "As a user, I need a configuration file so I can specify which model to use and customize behavior without editing code.",
+      "acceptanceCriteria": [
+        "Create src/config.py that loads from ~/.loop-orchestration/config.yaml",
+        "Support settings: model name, ollama_url, max_iterations, session_dir",
+        "Create default config on first run if missing",
+        "Validate config on load and report clear errors for: invalid YAML, missing required fields, invalid values",
+        "Reject negative or zero max_iterations with clear error",
+        "Handle config directory not writable (suggest fix)",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Startup health check",
+      "description": "As a user, I want the system to verify Ollama is ready before starting so I get immediate feedback instead of cryptic errors later.",
+      "acceptanceCriteria": [
+        "Create src/health.py with check_ollama_health() function",
+        "Check Ollama is reachable at startup (GET /api/tags)",
+        "Check configured model is available",
+        "If Ollama not running: 'Ollama not running. Start with: ollama serve'",
+        "If model missing: 'Model {model} not found. Install with: ollama pull {model}'",
+        "Health check completes in under 2 seconds (timeout)",
+        "Skip health check with --skip-check flag for advanced users",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Implement session persistence",
+      "description": "As a user, I want my work sessions saved so I can resume interrupted workflows.",
+      "acceptanceCriteria": [
+        "Create src/session.py with Session class",
+        "Sessions stored in ~/.loop-orchestration/sessions/[session-id]/",
+        "Save: current phase, task description, conversation history, skill outputs",
+        "Implement save(), load(), list_sessions() methods",
+        "Generate unique session IDs (timestamp + short hash)",
+        "Handle corrupted session files: warn user, offer to start fresh or delete",
+        "Handle disk full errors gracefully with clear message",
+        "Atomic writes (write to temp file, then rename) to prevent corruption on crash",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Add file operation tools",
+      "description": "As a skill, I need tools to read and write files so I can interact with the codebase.",
+      "acceptanceCriteria": [
+        "Create src/tools/file_ops.py with functions: read_file, write_file, list_dir, search_files",
+        "All tools return structured results (success/error, output, metadata)",
+        "Block path traversal attacks: reject paths containing .. that escape project root",
+        "Handle file not found with clear error (not stack trace)",
+        "Handle permission denied with clear error",
+        "Skip binary files when reading (detect via null bytes in first 1KB)",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Add shell command tool",
+      "description": "As a skill, I need a tool to run shell commands so I can execute builds, tests, and other operations.",
+      "acceptanceCriteria": [
+        "Create src/tools/shell.py with function: run_command (with timeout, output capture)",
+        "Return structured results (success/error, stdout, stderr, exit_code)",
+        "Block dangerous shell commands: rm -rf /, mkfs, dd if=, shutdown, reboot",
+        "Shell command timeout (default 60 seconds, configurable)",
+        "Truncate shell output over 100KB with '[output truncated]' message",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Implement completion detection",
+      "description": "As the loop engine, I need to detect when a task is complete so I know when to stop iterating.",
+      "acceptanceCriteria": [
+        "Create src/completion.py with CompletionDetector class",
+        "Detect explicit markers: [TASK_COMPLETE], [PHASE_COMPLETE], [NEEDS_USER_INPUT]",
+        "Detect implicit completion: no more actions proposed, tests passing mentioned",
+        "Return completion status and reason",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Add progress display and logging",
+      "description": "As a user, I want to see what the system is doing so I can monitor progress.",
+      "acceptanceCriteria": [
+        "Create src/display.py with progress output functions",
+        "Show current phase, iteration count, last action",
+        "Log all LLM interactions to session directory",
+        "Support quiet mode (minimal output) via flag",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Implement phase management",
+      "description": "As a user, I want the system to progress through structured phases so development follows a logical order.",
+      "acceptanceCriteria": [
+        "Create src/phases.py defining phases: PRD, TICKETS, RESEARCH, PLANNING, IMPLEMENTATION, REFACTORING",
+        "Each phase has: name, description, entry_prompt, completion_criteria",
+        "Implement PhaseManager that tracks current phase and transitions",
+        "Phases transition automatically when completion criteria met",
+        "Allow manual phase override via command",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Build the core loop engine",
+      "description": "As a developer, I need the main loop mechanism that executes tasks, checks completion, and re-feeds prompts until done.",
+      "acceptanceCriteria": [
+        "Create src/loop_engine.py with LoopEngine class",
+        "Accept task description and run until completion markers detected",
+        "Implement configurable max iterations (default: 50) to prevent infinite loops",
+        "Integrate with PhaseManager for phase transitions",
+        "Integrate with CompletionDetector for stop conditions",
+        "Log each iteration to session",
+        "Support graceful interruption (Ctrl+C saves state)",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Create base skill class",
+      "description": "As a developer, I need a base class that all skills inherit from so they share common functionality.",
+      "acceptanceCriteria": [
+        "Create src/skills/base.py with BaseSkill abstract class",
+        "Define abstract method execute(context) -> SkillOutput",
+        "Define system_prompt property",
+        "Define get_tools() method returning available tools",
+        "Include common utilities: format_output, log_action",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Create interactive PRD skill",
+      "description": "As a user, I want the system to ask me questions about what I want to build so it understands my requirements before coding.",
+      "acceptanceCriteria": [
+        "Create src/skills/prd_interviewer.py with PRDInterviewerSkill class",
+        "Asks discovery questions one at a time: problem, users, core features, success criteria, scope",
+        "Offers multiple-choice options (A/B/C/D style) for quick answers",
+        "Challenges vague answers and asks for specifics",
+        "Generates structured PRD document from answers",
+        "Saves PRD to session directory as prd.md",
+        "Handle empty answers: re-prompt with 'Please provide an answer to continue'",
+        "Allow user to type 'back' to revisit previous question",
+        "Truncate very long answers (>2000 chars) with warning",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Create Researcher skill",
+      "description": "As a user, I want a Researcher skill that investigates codebases and gathers context before implementation.",
+      "acceptanceCriteria": [
+        "Create src/skills/researcher.py with ResearcherSkill class",
+        "System prompt focuses on: reading files, understanding architecture, documenting findings",
+        "Output structured findings as markdown",
+        "Can search codebase, read files, analyze dependencies",
+        "Typecheck passes"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Create Reviewer skill",
+      "description": "As a user, I want a Reviewer skill that checks code quality and suggests improvements.",
+      "acceptanceCriteria": [
+        "Create src/skills/reviewer.py with ReviewerSkill class",
+        "System prompt focuses on: code review, bug detection, best practices",
+        "Output structured review with severity levels (critical, warning, suggestion)",
+        "Check for common issues: error handling, edge cases, security",
+        "Typecheck passes"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Create Implementer skill",
+      "description": "As a user, I want an Implementer skill that writes and modifies code based on plans.",
+      "acceptanceCriteria": [
+        "Create src/skills/implementer.py with ImplementerSkill class",
+        "System prompt focuses on: writing code, following specs, minimal changes",
+        "Can create files, edit files, run commands",
+        "Outputs clear diffs or file contents",
+        "Typecheck passes"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Create Refactorer skill",
+      "description": "As a user, I want a Refactorer skill that improves code quality without changing behavior.",
+      "acceptanceCriteria": [
+        "Create src/skills/refactorer.py with RefactorerSkill class",
+        "System prompt focuses on: code cleanup, DRY, readability, performance",
+        "Must preserve existing behavior (no functional changes)",
+        "Output refactoring plan before making changes",
+        "Typecheck passes"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Create skill orchestrator",
+      "description": "As a developer, I need a system that selects and invokes the appropriate skill based on the current phase.",
+      "acceptanceCriteria": [
+        "Create src/skill_orchestrator.py with SkillOrchestrator class",
+        "Map phases to default skills (PRD->PRDInterviewer, RESEARCH->Researcher, IMPLEMENTATION->Implementer, etc.)",
+        "Allow explicit skill selection override",
+        "Pass context between skills (previous outputs available to next skill)",
+        "Typecheck passes"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Build main CLI wrapper script",
+      "description": "As a user, I want a simple command to start a task so I don't need to understand the internals.",
+      "acceptanceCriteria": [
+        "Create loop.sh wrapper script",
+        "Usage: ./loop.sh 'task description' to start new session",
+        "Usage: ./loop.sh --resume [session-id] to continue session",
+        "Usage: ./loop.sh --list to show recent sessions",
+        "Display clear progress output during execution",
+        "Create src/main.py as Python entry point",
+        "Typecheck passes"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-019",
+      "title": "Create session management script",
+      "description": "As a user, I want helper scripts to manage sessions (list, resume, delete).",
+      "acceptanceCriteria": [
+        "Create loop-sessions.sh wrapper script",
+        "./loop-sessions.sh list - show all sessions with status",
+        "./loop-sessions.sh show [id] - display session details",
+        "./loop-sessions.sh resume [id] - continue a session",
+        "./loop-sessions.sh delete [id] - remove a session",
+        "Typecheck passes"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
