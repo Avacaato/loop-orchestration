@@ -218,6 +218,11 @@ def main(argv: list[str] | None = None) -> int:
         "--project", "-p",
         help="Project root directory (default: current directory)",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Show config debug info",
+    )
 
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
@@ -256,6 +261,15 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as e:
         print_error(f"Failed to load config: {e}")
         return 1
+
+    # Debug: show config info
+    if args.debug:
+        from .config import get_config_path
+        print(f"Config file: {get_config_path()}")
+        print(f"Model: {config.model}")
+        print(f"Ollama URL: {config.ollama_url}")
+        print(f"Max iterations: {config.max_iterations}")
+        print()
 
     # Create display
     display = create_display(quiet=args.quiet, log_dir=config.session_dir)
