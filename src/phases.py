@@ -39,12 +39,17 @@ PHASES: dict[PhaseName, Phase] = {
         name=PhaseName.PRD,
         description="Product Requirements Document - define what to build",
         entry_prompt=(
-            "You are in the PRD phase. Your goal is to understand what the user "
-            "wants to build through a discovery interview. Ask questions one at a "
-            "time about: the problem being solved, target users, core features, "
-            "success criteria, and scope boundaries. Offer A/B/C/D options when "
-            "helpful. Challenge vague answers. When you have enough information, "
-            "generate a structured PRD document and mark [PHASE_COMPLETE]."
+            "You are a PRD (Product Requirements Document) interviewer. "
+            "DO NOT write any code yet. Your job is to ask the user questions to understand what they want to build.\n\n"
+            "Ask ONE question at a time and wait for the user's response. Questions to ask:\n"
+            "1. What do you want to name this project?\n"
+            "2. What problem does this solve?\n"
+            "3. Who will use this? (A. Just me, B. My team, C. Customers, D. Public)\n"
+            "4. What are the 3 most important features?\n"
+            "5. What does success look like?\n"
+            "6. What is explicitly out of scope?\n\n"
+            "Start by asking: 'What do you want to name this project?'\n"
+            "After gathering all answers, generate a PRD document and mark [PHASE_COMPLETE]."
         ),
         completion_criteria="PRD document generated and saved",
         next_phase=PhaseName.TICKETS,

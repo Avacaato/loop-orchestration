@@ -285,10 +285,6 @@ class LoopEngine:
                         error=str(e),
                     )
 
-                # Display action (truncated)
-                action_preview = output[:100] if output else "(no output)"
-                self.display.show_action(action_preview)
-
                 # Process response
                 completion_result = self._process_response(output, context)
 
@@ -321,8 +317,26 @@ class LoopEngine:
                     context.current_input = self.phase_manager.get_entry_prompt()
                     system_prompt = context.current_input
                 else:
-                    # Continue with LLM output as context
-                    context.current_input = ""
+                    # PRD and TICKETS phases are interactive - get user input
+                    current_phase = self.phase_manager.current_phase_name
+                    if current_phase in (PhaseName.PRD, PhaseName.TICKETS):
+                        # Show full LLM response
+                        print(f"\n{output}\n")
+
+                        # Get user input
+                        try:
+                            user_input = input("Your answer (or 'skip' to continue): ").strip()
+                            if user_input.lower() == "skip":
+                                context.current_input = ""
+                            else:
+                                context.current_input = user_input
+                        except EOFError:
+                            context.current_input = ""
+                    else:
+                        # Non-interactive phases - show truncated action
+                        action_preview = output[:100] if output else "(no output)"
+                        self.display.show_action(action_preview)
+                        context.current_input = ""
 
                 # Save state periodically
                 if iteration % 5 == 0:
